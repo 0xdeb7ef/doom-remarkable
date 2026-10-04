@@ -85,7 +85,7 @@ pub fn build(b: *std.Build) void {
 
     const manifest = b.addInstallFileWithDir(
         b.addWriteFiles().add("manifest", json),
-        .{ .custom = Manifest.application },
+        doom.dest_dir.?,
         "external.manifest.json",
     );
 
