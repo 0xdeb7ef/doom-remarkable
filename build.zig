@@ -1,8 +1,13 @@
 const std = @import("std");
 
 const remarkable = @import("zqtfb").remarkable;
+const Translator = @import("translate_c").Translator;
 
-const name = "doom-remarkable";
+const Manifest = .{
+    .name = "DOOM",
+    .application = "doom-remarkable",
+    .qtfb = true,
+};
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{
@@ -20,21 +25,24 @@ pub fn build(b: *std.Build) void {
 
     const zqtfb = b.dependency("zqtfb", .{}).module("zqtfb");
     const doomgeneric = b.dependency("doomgeneric", .{});
+    const translate_c = b.dependency("translate_c", .{});
 
-    const header = b.addTranslateC(.{
-        .root_source_file = doomgeneric.path("doomgeneric/doomgeneric.h"),
+    const header: Translator = .init(translate_c, .{
+        .c_source_file = doomgeneric.path("doomgeneric/doomgeneric.h"),
         .target = target,
         .optimize = optimize,
-    }).createModule();
+        .default_init = false,
+    });
 
-    const keys = b.addTranslateC(.{
-        .root_source_file = doomgeneric.path("doomgeneric/doomkeys.h"),
+    const keys: Translator = .init(translate_c, .{
+        .c_source_file = doomgeneric.path("doomgeneric/doomkeys.h"),
         .target = target,
         .optimize = optimize,
-    }).createModule();
+        .default_init = false,
+    });
 
     const exe = b.addExecutable(.{
-        .name = name,
+        .name = Manifest.application,
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -42,8 +50,8 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
             .imports = &.{
                 .{ .name = "zqtfb", .module = zqtfb },
-                .{ .name = "doomgeneric", .module = header },
-                .{ .name = "doomkeys", .module = keys },
+                .{ .name = "doomgeneric", .module = header.mod },
+                .{ .name = "doomkeys", .module = keys.mod },
             },
             .strip = switch (optimize) {
                 .ReleaseFast, .ReleaseSmall => true,
@@ -61,14 +69,23 @@ pub fn build(b: *std.Build) void {
     const doom = b.addInstallArtifact(exe, .{
         .dest_dir = .{
             .override = .{
-                .custom = name,
+                .custom = Manifest.application,
             },
         },
     });
 
+    const json = std.fmt.allocPrint(
+        b.allocator,
+        "{f}\n",
+        .{std.json.fmt(
+            Manifest,
+            .{ .whitespace = .indent_2 },
+        )},
+    ) catch unreachable;
+
     const manifest = b.addInstallFileWithDir(
-        b.path("assets/manifest.json"),
-        .{ .custom = name },
+        b.addWriteFiles().add("manifest", json),
+        .{ .custom = Manifest.application },
         "external.manifest.json",
     );
 
