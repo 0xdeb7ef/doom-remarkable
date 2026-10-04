@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const remarkable = @import("zig_remarkable");
+const remarkable = @import("zqtfb").remarkable;
 
 const name = "doom-remarkable";
 
@@ -21,6 +21,18 @@ pub fn build(b: *std.Build) void {
     const zqtfb = b.dependency("zqtfb", .{}).module("zqtfb");
     const doomgeneric = b.dependency("doomgeneric", .{});
 
+    const header = b.addTranslateC(.{
+        .root_source_file = doomgeneric.path("doomgeneric/doomgeneric.h"),
+        .target = target,
+        .optimize = optimize,
+    }).createModule();
+
+    const keys = b.addTranslateC(.{
+        .root_source_file = doomgeneric.path("doomgeneric/doomkeys.h"),
+        .target = target,
+        .optimize = optimize,
+    }).createModule();
+
     const exe = b.addExecutable(.{
         .name = name,
         .root_module = b.createModule(.{
@@ -30,6 +42,8 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
             .imports = &.{
                 .{ .name = "zqtfb", .module = zqtfb },
+                .{ .name = "doomgeneric", .module = header },
+                .{ .name = "doomkeys", .module = keys },
             },
             .strip = switch (optimize) {
                 .ReleaseFast, .ReleaseSmall => true,
@@ -38,8 +52,11 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    exe.root_module.addIncludePath(doomgeneric.path("doomgeneric"));
-    exe.root_module.addCSourceFiles(.{ .files = &c_sources, .root = doomgeneric.path("doomgeneric"), .flags = &.{"-fno-sanitize=all"} });
+    exe.root_module.addCSourceFiles(.{
+        .files = &c_sources,
+        .root = doomgeneric.path("doomgeneric"),
+        .flags = &.{"-fno-sanitize=all"},
+    });
 
     const doom = b.addInstallArtifact(exe, .{
         .dest_dir = .{

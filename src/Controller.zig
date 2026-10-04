@@ -5,7 +5,7 @@ pub fn Controller(
     /// Pass an enum of the keys you will be using.
     comptime KeyType: type,
 ) type {
-    const max_buttons = @typeInfo(KeyType).@"enum".fields.len;
+    const max_buttons = @typeInfo(KeyType).@"enum".field_names.len;
     return struct {
         const Self = @This();
 

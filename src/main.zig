@@ -1,10 +1,9 @@
 const std = @import("std");
 const Io = std.Io;
 
+const doomgeneric = @import("doomgeneric");
+const keys = @import("doomkeys");
 const zqtfb = @import("zqtfb");
-
-const doomgeneric = @cImport(@cInclude("doomgeneric.h"));
-const keys = @cImport(@cInclude("doomkeys.h"));
 
 var client: zqtfb.Client = undefined;
 const width = 640;
@@ -175,7 +174,7 @@ export fn DG_GetKey(pressed: [*c]c_int, key: [*c]c_char) callconv(.c) c_int {
 
     if (getKey()) |k| {
         pressed.* = @intFromBool(k.pressed);
-        key.* = @intCast(@intFromEnum(k.key));
+        key.* = @intCast(@backingInt(k.key));
         return 1;
     }
 
@@ -183,10 +182,9 @@ export fn DG_GetKey(pressed: [*c]c_int, key: [*c]c_char) callconv(.c) c_int {
 }
 
 // noop
-export fn DG_SetWindowTitle(title: [*]c_char) callconv(.c) void {
+export fn DG_SetWindowTitle(_: [*]c_char) callconv(.c) void {
     const src = @src();
     log.debug("{s}: {s} {d}:{d}", .{ src.file, src.fn_name, src.line, src.column });
-    _ = title; // autofix
 }
 
 export fn DG_DrawFrame() callconv(.c) void {
