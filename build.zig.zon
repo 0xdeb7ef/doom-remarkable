@@ -18,7 +18,6 @@
     .fingerprint = 0xa7d6e4608277c4ce,
     .minimum_zig_version = "0.17.0",
     .paths = .{
-        "assets",
         "src",
         "build.zig",
         "build.zig.zon",
